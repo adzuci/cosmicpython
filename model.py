@@ -8,12 +8,12 @@ class OutOfStock(Exception):
     """Raised when an operation on inventory fails."""
 
 
-def allocate_order(order_line: OrderLine, available_batches: List[Batch]) -> str:
+def allocate_order(line: OrderLine, available_batches: List[Batch]) -> str:
     for batch in sorted(available_batches):
-        if batch.can_allocate(order_line):
-            batch.allocate(order_line)
+        if batch.can_allocate(line):
+            batch.allocate(line)
             return batch.reference
-    raise OutOfStock(f"Unable to allocate SKU {order_line.sku}: out of stock")
+    raise OutOfStock(f"Unable to allocate SKU {line.sku}: out of stock")
 
 
 @dataclass(frozen=True)
@@ -49,12 +49,12 @@ class Batch:
             return True
         return self.eta < other.eta
 
-    def allocate(self, order_line: OrderLine):
-        if self.can_allocate(order_line):
-            self._allocations.add(order_line)
+    def allocate(self, line: OrderLine):
+        if self.can_allocate(line):
+            self._allocations.add(line)
 
-    def deallocate(self, order_line: OrderLine):
-        self._allocations.discard(order_line)
+    def deallocate(self, line: OrderLine):
+        self._allocations.discard(line)
 
     @property
     def allocated_quantity(self) -> int:
@@ -64,5 +64,5 @@ class Batch:
     def available_quantity(self) -> int:
         return self._initial_quantity - self.allocated_quantity
 
-    def can_allocate(self, order_line: OrderLine) -> bool:
-        return self.sku
+    def can_allocate(self, line: OrderLine) -> bool:
+        return self.sku == line.sku and self.available_quantity >= line.quantity
